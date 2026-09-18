@@ -1,0 +1,67 @@
+name: n8n Staleness Check (reusable)
+
+# Called from individual node repos via:
+#   uses: TaurusSoft/.github/.github/workflows/n8n-staleness-check.yml@main
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: "20"
+
+jobs:
+  check-latest-n8n-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install latest n8n-workflow (without saving to package.json)
+        run: npm install n8n-workflow@latest --no-save
+
+      - name: Build against latest n8n-workflow
+        id: build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `⚠️ Staleness check failed: ${new Date().toISOString().slice(0, 10)}`;
+            const body = [
+              `Build against the latest \`n8n-workflow\` version failed.`,
+              ``,
+              `This likely means n8n changed something in the node API that this package relies on.`,
+              ``,
+              `See the run for details: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            ].join("\n");
+
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "n8n-api-change"
+            });
+
+            if (existing.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["n8n-api-change"]
+              });
+            }

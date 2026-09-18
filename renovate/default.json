@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 6am on monday"],
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "description": "Auto-merge safe minor/patch updates once CI is green",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Never auto-merge peerDependencies (breaking API risk)",
+      "matchDepTypes": ["peerDependencies"],
+      "automerge": false
+    },
+    {
+      "description": "Flag n8n core API updates explicitly for manual review",
+      "matchPackageNames": ["n8n-workflow", "n8n-core"],
+      "automerge": false,
+      "labels": ["n8n-api-change"],
+      "reviewersFromCodeOwners": false
+    },
+    {
+      "description": "Group GitHub Actions updates together",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  }
+}
