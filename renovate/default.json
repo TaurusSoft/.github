@@ -19,7 +19,7 @@
       "description": "Flag n8n core API updates explicitly for manual review",
       "matchPackageNames": ["n8n-workflow", "n8n-core"],
       "automerge": false,
-      "labels": ["n8n-api-change"],
+      "labels": ["type:api-break", "area:n8n"],
       "reviewersFromCodeOwners": false
     },
     {

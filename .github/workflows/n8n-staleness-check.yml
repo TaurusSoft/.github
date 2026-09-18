@@ -40,6 +40,36 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const labels = [
+              { name: "type:api-break", color: "d93f0b", description: "A dependency's API changed in a breaking way" },
+              { name: "area:n8n", color: "1d76db", description: "Related to the n8n platform/API" }
+            ];
+
+            // Ensure each label exists before we try to attach it — GitHub
+            // rejects issue creation with an unknown label (422).
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (err) {
+                if (err.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                } else {
+                  throw err;
+                }
+              }
+            }
+
+            const labelNames = labels.map(l => l.name);
             const title = `⚠️ Staleness check failed: ${new Date().toISOString().slice(0, 10)}`;
             const body = [
               `Build against the latest \`n8n-workflow\` version failed.`,
@@ -53,7 +83,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: "open",
-              labels: "n8n-api-change"
+              labels: labelNames.join(",")
             });
 
             if (existing.length === 0) {
@@ -62,6 +92,6 @@ jobs:
                 repo: context.repo.repo,
                 title,
                 body,
-                labels: ["n8n-api-change"]
+                labels: labelNames
               });
             }
