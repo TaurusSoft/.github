@@ -1,4 +1,4 @@
-# TaurusSoft
+# Taurus Software
 
 Community-maintained integrations and tools, currently focused on [n8n](https://n8n.io) community nodes.
 
